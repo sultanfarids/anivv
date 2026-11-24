@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Happy Anniversary, sayang</title>
+  
+  <!-- Tailwind CSS for clean, responsive glassmorphic UI -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Felipa&family=Lilita+One&display=swap" rel="stylesheet">
+
+  <style>
+    /* Custom styles for full-viewport 3D canvas and dreamy atmosphere */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 42%, #2b1424 0%, #160a14 55%, #0b050a 100%);
+      font-family: 'Inter', sans-serif;
+      color: #fdf2f8;
+      user-select: none;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      touch-action: none; /* Allows smooth OrbitControls touch gestures */
+    }
+
+    .font-serif-romantic {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+    }
+
+    .font-handwriting {
+      font-family: 'Caveat', cursive;
+    }
+
+    /* Subtle glassmorphism panel */
+    .glass-panel {
+      background: rgba(34, 15, 29, 0.45);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(251, 207, 232, 0.18);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    /* Modal backdrop and transition */
+    .modal-backdrop {
+      background: rgba(12, 5, 11, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .modal-card {
+      background: linear-gradient(160deg, rgba(45, 20, 38, 0.92) 0%, rgba(24, 10, 21, 0.96) 100%);
+      border: 1px solid rgba(244, 114, 182, 0.28);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 40px rgba(236, 72, 153, 0.15);
+      transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+    }
+
+    .modal-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .modal-hidden .modal-card {
+      transform: translateY(18px) scale(0.96);
+      opacity: 0;
+    }
+
+    /* Soft pulse animation for hint badge */
+    @keyframes gentlePulse {
+      0%, 100% { opacity: 0.75; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(-2px); }
+    }
+    .animate-gentle-pulse {
+      animation: gentlePulse 3s ease-in-out infinite;
+    }
+
+    /* Custom scrollbar inside the love letter if text is long */
+    .letter-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .letter-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .letter-scroll::-webkit-scrollbar-thumb {
+      background: rgba(244, 114, 182, 0.3);
+      border-radius: 9999px;
+    }
+  </style>
+
+  <!-- Three.js Import Map (ES Modules via CDN) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Top Minimal Header Overlay -->
+  <header class="fixed top-0 left-0 right-0 z-10 pointer-events-none px-5 pt-6 sm:pt-8 flex flex-col items-center text-center">
+    <!-- =====================================================================
+         CUSTOMIZE HERE: Header Title & Subtitle
+         ===================================================================== -->
+    <p class="text-[11px] sm:text-xs lowercase tracking-[0.28em] text-pink-200/70 mb-1">
+      Aku masih belum bisa beliin yang beneran, jadi ini dulu ya wkwkwk
+    </p>
+    <h1 class="font-serif-romantic italic text-3xl sm:text-4xl md:text-5xl text-pink-50 drop-shadow-[0_2px_12px_rgba(244,114,182,0.35)]">
+      Lily for You, Sayang <3
+    </h1>
+  </header>
+
+  <!-- Bottom Floating Glassmorphic Controls -->
+  <footer class="fixed bottom-0 left-0 right-0 z-10 pointer-events-none px-4 pb-6 sm:pb-8 flex flex-col items-center">
+    
+   
+    <!--div id="interaction-hint" class="mb-3 px-3.5 py-1 rounded-full bg-pink-950/50 border border-pink-300/20 text-pink-100/85 text-xs tracking-wide animate-gentle-pulse backdrop-blur-md">
+      ✨ Tap flower to bloom • Tap a photo to view • Drag to rotate
+    </div>
+
+    <!-- Action Bar -->
+    <div class="glass-panel pointer-events-auto rounded-2xl p-2 flex items-center gap-2 sm:gap-3 max-w-md w-full justify-between">
+      
+      <!-- Bloom / Close Toggle Button -->
+      <button 
+        id="btn-bloom" 
+        type="button"
+        class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-500/80 to-rose-500/80 hover:from-pink-500 hover:to-rose-500 active:scale-[0.98] text-white text-sm font-medium transition-all shadow-lg shadow-pink-950/40 flex items-center justify-center gap-2 cursor-pointer"
+      >
+        <svg id="icon-bloom" class="w-4 h-4 text-pink-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+        </svg>
+        <span id="btn-bloom-text">Buka</span>
+      </button>
+
+      <!-- Open Love Note Modal Button -->
+      <button 
+        id="btn-note" 
+        type="button"
+        class="flex-1 py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 active:scale-[0.98] border border-pink-200/25 text-pink-50 text-sm font-medium transition-all flex items-center justify-center gap-2 cursor-pointer"
+      >
+        <svg class="w-4 h-4 text-pink-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+        </svg>
+        <span>Suratnya</span>
+      </button>
+
+    </div>
+  </footer>
+
+  <!-- =====================================================================
+       LOVE LETTER MODAL (CUSTOMIZE YOUR MESSAGE INSIDE HERE)
+       ===================================================================== -->
+  <div id="note-modal" class="modal-backdrop modal-hidden fixed inset-0 z-30 flex items-center justify-center p-4 sm:p-6">
+    <div class="modal-card relative w-full max-w-md rounded-3xl p-6 sm:p-8 text-pink-50">
+      
+      <!-- Close Modal Button -->
+      <button 
+        id="btn-close-modal" 
+        type="button"
+        aria-label="Close love note"
+        class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-pink-200 transition-colors cursor-pointer"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Decorative Lily Emblem -->
+      <div class="w-11 h-11 rounded-2xl bg-pink-500/20 border border-pink-300/30 flex items-center justify-center mb-4 text-pink-300">
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg>
+      </div>
+
+      <!-- ===================================================================
+           CUSTOMIZE HERE: Edit her name, your message, and your signature!
+           =================================================================== -->
+      <h2 class="font-serif-romantic italic text-2xl sm:text-3xl text-pink-100 mb-3">
+         Hi sayang, i cant really write letter, but i will try hehe.
+      </h2>
+
+      <div class="letter-scroll max-h-[52vh] overflow-y-auto pr-1 space-y-3.5 text-sm sm:text-base leading-relaxed text-pink-100/90 font-light">
+        <p>
+          Even though we're miles apart right now, I wanted to make you something that you can keep with you wherever you are.
+        </p>
+        <p>
+          Every time you open this, remember how much I miss you, how proud I am of you, and how excited I am for the day I get to hand you a real bouquet in person.
+        </p>
+        <p>
+          You make every single day brighter just by being in my life.
+        </p>
+        <p>
+          I really thank you for being my girlfriend, my best friend, and my everything.
+        </p>
+        <p>
+          I love you because u change the way I view the world, you make me a better person, and you make me feel like i can change when im with you. 
+        </p>
+        <p>
+         I love you because you are my home, my safe place, and my favorite person to be around.
+        </p>
+        <p> 
+          I really wish that im in a better place right now, so that i can give you something better than this, but i hope that this little gift can make you happy and remind you of me.
+        </p>
+        <p>
+          Happy anniversary sayang, i hope you like this little gift from me and i hope that i can give you something special in the future. I love you so much, and i hope we can be together soon.
+        </p>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-pink-200/15 flex items-center justify-between">
+        <div>
+          <p class="text-xs text-pink-300/75 uppercase tracking-wider">Forever yours,</p>
+          <p class="font-serif-romantic italic text-xl text-pink-100 mt-0.5">
+            sfs ♥
+          </p>
+        </div>
+        <span class="text-xs text-pink-300/60 italic">i love you</span>
+      </div>
+      <!-- =================================================================== -->
+
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       POLAROID PHOTO LIGHTBOX MODAL (OPENS WHEN SHE TAPS A FLOATING PHOTO)
+       ===================================================================== -->
+  <div id="photo-modal" class="modal-backdrop modal-hidden fixed inset-0 z-30 flex items-center justify-center p-4 sm:p-6">
+    <div class="modal-card relative w-full max-w-sm rounded-3xl p-4 sm:p-5 text-pink-50 flex flex-col items-center">
+      
+      <!-- Close Photo Modal Button -->
+      <button 
+        id="btn-close-photo" 
+        type="button"
+        aria-label="Close photo"
+        class="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full bg-rose-950/90 hover:bg-rose-900 border border-pink-300/30 flex items-center justify-center text-pink-100 shadow-lg transition-colors cursor-pointer"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Physical Printed Polaroid Card Frame -->
+      <div class="w-full bg-[#fffdf9] rounded-xl p-3 pb-5 shadow-2xl text-stone-800 transform transition-transform">
+        <div class="w-full aspect-square rounded-lg overflow-hidden bg-pink-100 shadow-inner">
+          <img 
+            id="modal-photo-img" 
+            src="" 
+            alt="Our memory" 
+            class="w-full h-full object-cover"
+          />
+        </div>
+        <div class="pt-3.5 px-1 text-center">
+          <p id="modal-photo-caption" class="font-handwriting text-2xl sm:text-[26px] leading-snug text-stone-800">
+            Our favorite memory
+          </p>
+          <p id="modal-photo-date" class="text-[11px] lowercase tracking-[0.2em] text-stone-400 mt-1">
+            Forever &amp; Always
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Three.js Procedural 3D Stargazer Pink Lily Script -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // =========================================================================
+    // 1. SCENE, CAMERA & RENDERER SETUP
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x140812, 0.045);
+
+    const camera = new THREE.PerspectiveCamera(
+      42,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      100
+    );
+    // Position camera nicely to frame both the blossom and graceful stem
+    camera.position.set(0.4, 2.2, 6.2);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // OrbitControls for intuitive mobile touch & desktop mouse rotation/zoom
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.enablePan = false;
+    controls.minDistance = 2.8;
+    controls.maxDistance = 10.5;
+    controls.minPolarAngle = Math.PI * 0.12;
+    controls.maxPolarAngle = Math.PI * 0.78;
+    controls.target.set(0, 0.75, 0);
+    controls.update();
+
+    // =========================================================================
+    // 2. ROMANTIC TWILIGHT LIGHTING
+    // =========================================================================
+    const ambientLight = new THREE.AmbientLight(0xffd6e7, 0.65);
+    scene.add(ambientLight);
+
+    // Warm golden-rose key light from front-top-right
+    const keyLight = new THREE.DirectionalLight(0xfff0f5, 2.1);
+    keyLight.position.set(3.5, 5.5, 4.5);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.bias = -0.0005;
+    scene.add(keyLight);
+
+    // Soft magenta-pink rim light from behind to illuminate translucent petals
+    const rimLight = new THREE.SpotLight(0xff5ca8, 3.8, 18, Math.PI / 3, 0.6);
+    rimLight.position.set(-2.5, 3.2, -4.2);
+    scene.add(rimLight);
+
+    // Subtle cool twilight fill from below/left for depth
+    const fillLight = new THREE.PointLight(0xa855f7, 1.1, 12);
+    fillLight.position.set(-3.5, -1.0, 2.5);
+    scene.add(fillLight);
+
+    // =========================================================================
+    // 3. PROCEDURAL TEXTURES FOR STARGAZER LILY PETALS & GLOW PARTICLES
+    // =========================================================================
+    function createLilyPetalTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+
+      // Base soft blush-white to deep rose-pink gradient from tip (top) to throat (bottom)
+      const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+      grad.addColorStop(0.0, '#fff7fa');   // Crisp soft white-blush tip
+      grad.addColorStop(0.16, '#ffd6e7');  // Pale pastel pink
+      grad.addColorStop(0.45, '#f472b6');  // Vibrant Stargazer pink
+      grad.addColorStop(0.82, '#db2777');  // Rich magenta-rose center
+      grad.addColorStop(0.95, '#be185d');  // Deep rose throat
+      grad.addColorStop(1.0, '#9ac25d');   // Hint of fresh green at very base
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 1024);
+
+      // Soft white edge vignette (characteristic white border of Stargazer lilies)
+      const edgeGradLeft = ctx.createLinearGradient(0, 0, 115, 0);
+      edgeGradLeft.addColorStop(0, 'rgba(255, 250, 252, 0.92)');
+      edgeGradLeft.addColorStop(0.55, 'rgba(255, 235, 245, 0.45)');
+      edgeGradLeft.addColorStop(1, 'rgba(255, 235, 245, 0)');
+      ctx.fillStyle = edgeGradLeft;
+      ctx.fillRect(0, 0, 115, 920);
+
+      const edgeGradRight = ctx.createLinearGradient(512, 0, 397, 0);
+      edgeGradRight.addColorStop(0, 'rgba(255, 250, 252, 0.92)');
+      edgeGradRight.addColorStop(0.55, 'rgba(255, 235, 245, 0.45)');
+      edgeGradRight.addColorStop(1, 'rgba(255, 235, 245, 0)');
+      ctx.fillStyle = edgeGradRight;
+      ctx.fillRect(397, 0, 115, 920);
+
+      // Subtle central midrib vein highlight
+      const veinGrad = ctx.createLinearGradient(236, 0, 276, 0);
+      veinGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      veinGrad.addColorStop(0.5, 'rgba(255, 228, 242, 0.38)');
+      veinGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = veinGrad;
+      ctx.fillRect(236, 60, 40, 880);
+
+      // Fine longitudinal organic petal striations
+      ctx.strokeStyle = 'rgba(157, 23, 77, 0.08)';
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < 45; i++) {
+        const x = 60 + (i / 45) * 392;
+        ctx.beginPath();
+        ctx.moveTo(x, 80);
+        ctx.bezierCurveTo(
+          x + Math.sin(i) * 14, 400,
+          x - Math.cos(i) * 14, 700,
+          256 + (x - 256) * 0.35, 1010
+        );
+        ctx.stroke();
+      }
+
+      // Characteristic dark crimson-burgundy Stargazer freckles/spots in the lower-middle zone
+      for (let i = 0; i < 95; i++) {
+        // Concentrate spots between 38% and 84% down the petal, clustered near center
+        const t = Math.random();
+        const y = 380 + t * 470;
+        const spread = (1 - Math.abs(t - 0.5) * 1.4) * 135;
+        const x = 256 + (Math.random() - 0.5) * 2 * spread;
+
+        const radiusX = 2.2 + Math.random() * 4.2;
+        const radiusY = radiusX * (1.2 + Math.random() * 0.7);
+        const alpha = 0.35 + Math.random() * 0.45;
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate((Math.random() - 0.5) * 0.3);
+        ctx.fillStyle = `rgba(112, 12, 54, ${alpha})`;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, radiusX, radiusY, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = 4;
+      return texture;
+    }
+
+    function createSoftGlowTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.3, 'rgba(255, 210, 235, 0.8)');
+      grad.addColorStop(0.7, 'rgba(244, 114, 182, 0.25)');
+      grad.addColorStop(1, 'rgba(244, 114, 182, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    const petalTexture = createLilyPetalTexture();
+    const glowTexture = createSoftGlowTexture();
+
+    // =========================================================================
+    // 4. PARAMETRIC SCULPTED 3D LILY PETAL GEOMETRY
+    // =========================================================================
+    function createLilyPetalGeometry(length = 2.35, maxWidth = 0.78, curlAmount = 0.55) {
+      const segU = 28; // Width segments
+      const segV = 44; // Length segments
+      const geometry = new THREE.PlaneGeometry(1, 1, segU, segV);
+      const pos = geometry.attributes.position;
+
+      for (let i = 0; i < pos.count; i++) {
+        // Normalized coordinates: u in [-1, 1] across width, v in [0, 1] from base to tip
+        const u = pos.getX(i) * 2;
+        const v = pos.getY(i) + 0.5;
+
+        // Lily petal silhouette: narrow base, widest around 42% length, tapering to graceful pointed tip
+        const widthProfile =
+          Math.pow(Math.sin(Math.pow(v, 0.78) * Math.PI), 0.78) *
+          (1 - 0.12 * Math.pow(v, 3));
+        const x = u * (maxWidth * 0.5) * widthProfile;
+
+        // Subtle ruffled/wavy edges characteristic of Stargazer lilies
+        const edgeFactor = Math.pow(Math.abs(u), 2.2);
+        const ruffle = Math.sin(v * Math.PI * 5.0) * 0.045 * edgeFactor * Math.sin(v * Math.PI);
+
+        // Central longitudinal crease/cupping (trough along center, gentle arch across width)
+        const cup = (1 - u * u) * 0.08 * Math.sin(v * Math.PI);
+        const midribGroove = -Math.exp(-u * u * 18) * 0.035 * Math.sin(v * Math.PI);
+
+        // Outward graceful recurve along length v
+        const archZ =
+          Math.sin(v * Math.PI * 0.75) * 0.35 -
+          Math.pow(v, 2.35) * curlAmount +
+          cup +
+          midribGroove +
+          ruffle;
+
+        // Slight foreshortening in Y as the tip curls backward
+        const y = v * length - Math.pow(v, 3.1) * (curlAmount * 0.32);
+
+        pos.setXYZ(i, x, y, archZ);
+      }
+
+      geometry.computeVertexNormals();
+      return geometry;
+    }
+
+    // =========================================================================
+    // 5. ASSEMBLING THE 3D LILY FLOWER, STAMENS, PISTIL, STEM & LEAVES
+    // =========================================================================
+    const flowerRoot = new THREE.Group();
+    scene.add(flowerRoot);
+
+    // Group that holds the blossom head (tilted slightly forward toward viewer)
+    const blossomHead = new THREE.Group();
+    blossomHead.position.set(0, 1.15, 0.15);
+    blossomHead.rotation.x = 0.52; // Tilted gracefully toward the camera
+    flowerRoot.add(blossomHead);
+
+    // Translucent velvet-sheen petal material
+    const petalMaterial = new THREE.MeshPhysicalMaterial({
+      map: petalTexture,
+      roughness: 0.38,
+      metalness: 0.02,
+      sheen: 0.65,
+      sheenRoughness: 0.45,
+      sheenColor: new THREE.Color(0xffb3d9),
+      transmission: 0.14,
+      thickness: 0.25,
+      side: THREE.DoubleSide
+    });
+
+    // 6 Petals: 3 Inner Petals (slightly broader) + 3 Outer Sepals (slightly narrower, interleaved)
+    const petalPivots = [];
+    const innerGeo = createLilyPetalGeometry(2.38, 0.86, 0.58);
+    const outerGeo = createLilyPetalGeometry(2.32, 0.72, 0.64);
+
+    for (let i = 0; i < 6; i++) {
+      const isInner = i % 2 === 0;
+      const angle = (i * Math.PI) / 3;
+
+      const radialGroup = new THREE.Group();
+      radialGroup.rotation.y = angle;
+      blossomHead.add(radialGroup);
+
+      // Pivot at the base of the petal so we can animate opening/closing
+      const pivot = new THREE.Group();
+      pivot.position.set(0, 0, isInner ? 0.04 : 0.07);
+      radialGroup.add(pivot);
+
+      const mesh = new THREE.Mesh(isInner ? innerGeo : outerGeo, petalMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      pivot.add(mesh);
+
+      petalPivots.push({
+        pivot,
+        isInner,
+        baseAngleOffset: (Math.random() - 0.5) * 0.04,
+        // Closed bud tilt vs wide open bloom tilt (in radians around X)
+        closedTilt: isInner ? 0.24 : 0.30,
+        openTilt: isInner ? 1.08 : 1.18
+      });
+    }
+
+    // --- Center Pistil (Curved green-to-pink style + 3-lobed stigma) ---
+    const pistilCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0.02, 0.55, 0.08),
+      new THREE.Vector3(0.04, 1.15, 0.24),
+      new THREE.Vector3(0.02, 1.55, 0.44)
+    ]);
+    const pistilGeo = new THREE.TubeGeometry(pistilCurve, 20, 0.032, 10, false);
+    const pistilMat = new THREE.MeshStandardMaterial({
+      color: 0xa3d977,
+      roughness: 0.45
+    });
+    const pistilMesh = new THREE.Mesh(pistilGeo, pistilMat);
+    blossomHead.add(pistilMesh);
+
+    // 3-lobed Stigma tip at end of pistil
+    const stigmaGroup = new THREE.Group();
+    stigmaGroup.position.copy(pistilCurve.getPoint(1));
+    const stigmaMat = new THREE.MeshStandardMaterial({
+      color: 0xd9468f,
+      roughness: 0.35
+    });
+    for (let s = 0; s < 3; s++) {
+      const lobe = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 12), stigmaMat);
+      lobe.scale.set(1.1, 0.85, 1.1);
+      const a = (s * Math.PI * 2) / 3;
+      lobe.position.set(Math.cos(a) * 0.03, 0.02, Math.sin(a) * 0.03);
+      stigmaGroup.add(lobe);
+    }
+    blossomHead.add(stigmaGroup);
+
+    // --- 6 Stamens (Slender filaments + golden-amber pollen anthers) ---
+    const stamenPivots = [];
+    const filamentMat = new THREE.MeshStandardMaterial({
+      color: 0xd9f2b4,
+      roughness: 0.4
+    });
+    const antherMat = new THREE.MeshStandardMaterial({
+      color: 0xb45309,
+      emissive: 0x451a03,
+      emissiveIntensity: 0.35,
+      roughness: 0.65
+    });
+
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI) / 3 + Math.PI / 6;
+      const radial = new THREE.Group();
+      radial.rotation.y = angle;
+      blossomHead.add(radial);
+
+      const sPivot = new THREE.Group();
+      radial.add(sPivot);
+
+      const filCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0, 0.03),
+        new THREE.Vector3(0, 0.55, 0.14),
+        new THREE.Vector3(0, 1.15, 0.32),
+        new THREE.Vector3(0, 1.42, 0.42)
+      ]);
+      const filGeo = new THREE.TubeGeometry(filCurve, 16, 0.014, 8, false);
+      const filMesh = new THREE.Mesh(filGeo, filamentMat);
+      sPivot.add(filMesh);
+
+      // Anther capsule balanced at the tip
+      const antherGeo = new THREE.CapsuleGeometry(0.036, 0.14, 6, 12);
+      const antherMesh = new THREE.Mesh(antherGeo, antherMat);
+      const tip = filCurve.getPoint(1);
+      antherMesh.position.copy(tip);
+      antherMesh.rotation.set(Math.PI * 0.38, 0.2, 0.3);
+      sPivot.add(antherMesh);
+
+      stamenPivots.push(sPivot);
+    }
+
+    // --- Graceful Curved Stem & Lance-Shaped Lily Leaves ---
+    const stemCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 1.15, 0.15),   // Connects smoothly to blossom receptacle
+      new THREE.Vector3(-0.04, 0.55, 0.02),
+      new THREE.Vector3(-0.10, -0.35, -0.06),
+      new THREE.Vector3(-0.04, -1.45, -0.02),
+      new THREE.Vector3(0.02, -2.85, 0.04)
+    ]);
+    const stemGeo = new THREE.TubeGeometry(stemCurve, 32, 0.068, 12, false);
+    const stemMat = new THREE.MeshStandardMaterial({
+      color: 0x3b6e2c,
+      roughness: 0.55
+    });
+    const stemMesh = new THREE.Mesh(stemGeo, stemMat);
+    stemMesh.receiveShadow = true;
+    flowerRoot.add(stemMesh);
+
+    // Create lance-shaped leaf geometry
+    function createLeafGeometry(length = 1.45, width = 0.34) {
+      const geo = new THREE.PlaneGeometry(1, 1, 12, 24);
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const u = pos.getX(i) * 2;
+        const v = pos.getY(i) + 0.5;
+        const wProfile = Math.sin(Math.pow(v, 0.72) * Math.PI);
+        const x = u * (width * 0.5) * wProfile;
+        const archZ = Math.sin(v * Math.PI * 0.65) * 0.25 - Math.pow(v, 2.2) * 0.42 + (1 - u * u) * 0.03;
+        const y = v * length;
+        pos.setXYZ(i, x, y, archZ);
+      }
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    const leafMat = new THREE.MeshPhysicalMaterial({
+      color: 0x3f7a30,
+      roughness: 0.42,
+      sheen: 0.35,
+      sheenColor: new THREE.Color(0x86efac),
+      side: THREE.DoubleSide
+    });
+
+    const leafPlacements = [
+      { t: 0.22, rotY: 0.4, tiltX: 0.85, scale: 0.85 },
+      { t: 0.36, rotY: 2.5, tiltX: 0.95, scale: 1.0 },
+      { t: 0.50, rotY: 4.5, tiltX: 0.90, scale: 1.08 },
+      { t: 0.65, rotY: 1.3, tiltX: 1.02, scale: 0.95 },
+      { t: 0.78, rotY: 3.7, tiltX: 1.05, scale: 0.82 }
+    ];
+
+    const leafGeo = createLeafGeometry();
+    leafPlacements.forEach((cfg) => {
+      const leafGroup = new THREE.Group();
+      leafGroup.position.copy(stemCurve.getPoint(cfg.t));
+      leafGroup.rotation.y = cfg.rotY;
+
+      const leafMesh = new THREE.Mesh(leafGeo, leafMat);
+      leafMesh.rotation.x = cfg.tiltX;
+      leafMesh.scale.setScalar(cfg.scale);
+      leafMesh.castShadow = true;
+      leafMesh.receiveShadow = true;
+      leafGroup.add(leafMesh);
+      flowerRoot.add(leafGroup);
+    });
+
+    // =========================================================================
+    // 5B. FLOATING PRINTED POLAROID MEMORY CARDS
+    // =========================================================================
+    // Helper: Generates warm aesthetic placeholder Polaroid artwork so the scene
+    // looks complete right away before you swap in your own local photo paths.
+    function createPlaceholderPhotoDataUrl(themeIndex, labelText) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 600;
+      const ctx = canvas.getContext('2d');
+
+      const palettes = [
+        ['#fbcfe8', '#f472b6', '#831843'], // Sunset Rose
+        ['#fde68a', '#f9a8d4', '#701a75'], // Golden Hour Blush
+        ['#ddd6fe', '#f472b6', '#4c1d95'], // Twilight Lavender
+        ['#fecdd3', '#fb7185', '#881337']  // Cherry Blossom
+      ];
+      const [c1, c2, c3] = palettes[themeIndex % palettes.length];
+
+      const grad = ctx.createLinearGradient(0, 0, 600, 600);
+      grad.addColorStop(0, c1);
+      grad.addColorStop(0.55, c2);
+      grad.addColorStop(1, c3);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 600, 600);
+
+      // Soft dreamy bokeh circles
+      for (let i = 0; i < 18; i++) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.08 + (i % 4) * 0.05})`;
+        ctx.beginPath();
+        ctx.arc(
+          (i * 97) % 600,
+          (i * 131) % 600,
+          28 + (i % 5) * 18,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      // Subtle glowing heart silhouette in center
+      ctx.save();
+      ctx.translate(300, 265);
+      ctx.scale(2.3, 2.3);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.beginPath();
+      ctx.moveTo(0, 12);
+      ctx.bezierCurveTo(-25, -14, -50, 8, 0, 42);
+      ctx.bezierCurveTo(50, 8, 25, -14, 0, 12);
+      ctx.fill();
+      ctx.restore();
+
+      // Hint text indicating where her photo will appear
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.font = '500 26px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(labelText, 300, 445);
+
+      ctx.fillStyle = 'rgba(255, 241, 242, 0.72)';
+      ctx.font = '400 18px Inter, sans-serif';
+      ctx.fillText('(Replace with your photo in code)', 300, 480);
+
+      return canvas.toDataURL('image/png');
+    }
+
+    // =========================================================================
+    // CUSTOMIZE YOUR 4 FLOATING PHOTOS & CAPTIONS HERE!
+    // Replace `imageUrl` with your own image path (e.g. 'images/photo1.jpg')
+    // =========================================================================
+    const MEMORY_PHOTOS = [
+      {
+        // CUSTOMIZE PHOTO 1:
+        imageUrl: 'images/surat1.jpg',
+        caption: 'Where our story began ♥',
+        date: '25-09-2025',
+        position: new THREE.Vector3(-2.15, 1.95, -0.45),
+        rotation: new THREE.Euler(0.06, 0.42, 0.08)
+      },
+      {
+        // CUSTOMIZE PHOTO 2:
+        imageUrl: 'images/fav.jpg',
+        caption: 'My favorite moment, is going out with you and being with you <3',
+        date: '17-05-2026',
+        position: new THREE.Vector3(2.2, 1.65, -0.35),
+        rotation: new THREE.Euler(0.05, -0.45, -0.07)
+      },
+      {
+        // CUSTOMIZE PHOTO 6:
+        imageUrl: 'images/game.jpg',
+        caption: 'cant wait to explore more theme park with you',
+        date: 'u look so cute in here :P',
+        position: new THREE.Vector3(-1, 1, -0.65),
+        rotation: new THREE.Euler(-0.08, 0.48, -0.06)
+      },
+      {
+        // CUSTOMIZE PHOTO 3:
+        imageUrl: 'images/coaster.jpg',
+        caption: 'Thanks for all the gifts and memories we shared together',
+        date: 'I still havent use the coaster LOL, i dont want to ruin it',
+        position: new THREE.Vector3(-1.95, -0.15, 0.65),
+        rotation: new THREE.Euler(-0.08, 0.48, -0.06)
+      },
+      {
+        // CUSTOMIZE PHOTO 4:
+        imageUrl: 'images/first.jpg',
+        caption: 'our first photo together, i will always remember this day',
+        date: 'Forever & Always',
+        position: new THREE.Vector3(2.0, -0.25, 0.55),
+        rotation: new THREE.Euler(-0.06, -0.48, 0.07)
+      },
+
+      {
+        // CUSTOMIZE PHOTO 5:
+        imageUrl: 'images/birthday.jpg',
+        caption: 'Ur birthday hehe',
+        date: 'i look so shit',
+        position: new THREE.Vector3(1, 1, -0.35),
+        rotation: new THREE.Euler(-0.06, -0.48, 0.07)
+      }
+    ];
+
+    const textureLoader = new THREE.TextureLoader();
+    const polaroidGroupRoot = new THREE.Group();
+    scene.add(polaroidGroupRoot);
+    const polaroidCards = [];
+
+    function createPolaroidMesh(memory, index) {
+      const cardGroup = new THREE.Group();
+
+      // 1. Physical warm off-white Polaroid paper backing
+      const frameGeo = new THREE.BoxGeometry(0.96, 1.18, 0.022);
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0xfffdf9,
+        roughness: 0.68,
+        metalness: 0.02
+      });
+      const frameMesh = new THREE.Mesh(frameGeo, frameMat);
+      frameMesh.castShadow = true;
+      frameMesh.receiveShadow = true;
+      cardGroup.add(frameMesh);
+
+      // 2. Printed square photo surface on the front
+      const photoTex = textureLoader.load(memory.imageUrl);
+      photoTex.colorSpace = THREE.SRGBColorSpace;
+      const photoGeo = new THREE.PlaneGeometry(0.84, 0.84);
+      const photoMat = new THREE.MeshBasicMaterial({ map: photoTex });
+      const photoMesh = new THREE.Mesh(photoGeo, photoMat);
+      photoMesh.position.set(0, 0.09, 0.012);
+      cardGroup.add(photoMesh);
+
+      // 3. Subtle handwritten-style line accent on the bottom Polaroid chin
+      const lineGeo = new THREE.PlaneGeometry(0.52, 0.018);
+      const lineMat = new THREE.MeshBasicMaterial({ color: 0xf472b6, transparent: true, opacity: 0.45 });
+      const lineMesh = new THREE.Mesh(lineGeo, lineMat);
+      lineMesh.position.set(0, -0.44, 0.012);
+      cardGroup.add(lineMesh);
+
+      // Store metadata for floating animation and raycast tap-to-open
+      cardGroup.position.copy(memory.position);
+      cardGroup.rotation.copy(memory.rotation);
+      cardGroup.userData = {
+        isPolaroid: true,
+        imageUrl: memory.imageUrl,
+        caption: memory.caption,
+        date: memory.date,
+        basePos: memory.position.clone(),
+        baseRot: memory.rotation.clone(),
+        phase: index * 1.65
+      };
+
+      // Tag all child meshes so Raycaster hits resolve to this Polaroid card
+      cardGroup.traverse((child) => {
+        if (child.isMesh) {
+          child.userData.polaroidParent = cardGroup;
+        }
+      });
+
+      polaroidGroupRoot.add(cardGroup);
+      polaroidCards.push(cardGroup);
+    }
+
+    MEMORY_PHOTOS.forEach((mem, idx) => createPolaroidMesh(mem, idx));
+
+    // =========================================================================
+    // 6. FLOATING AMBIENT FIREFLIES & INTERACTIVE BLOOM BURST PARTICLES
+    // =========================================================================
+    const ambientCount = 110;
+    const ambientGeo = new THREE.BufferGeometry();
+    const ambientPositions = new Float32Array(ambientCount * 3);
+    const ambientSpeeds = new Float32Array(ambientCount);
+    const ambientPhases = new Float32Array(ambientCount);
+
+    for (let i = 0; i < ambientCount; i++) {
+      ambientPositions[i * 3] = (Math.random() - 0.5) * 9.5;
+      ambientPositions[i * 3 + 1] = (Math.random() - 0.5) * 7.5;
+      ambientPositions[i * 3 + 2] = (Math.random() - 0.5) * 8.5;
+      ambientSpeeds[i] = 0.15 + Math.random() * 0.28;
+      ambientPhases[i] = Math.random() * Math.PI * 2;
+    }
+    ambientGeo.setAttribute('position', new THREE.BufferAttribute(ambientPositions, 3));
+
+    const ambientParticleMat = new THREE.PointsMaterial({
+      map: glowTexture,
+      color: 0xffb8dc,
+      size: 0.16,
+      transparent: true,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const ambientParticles = new THREE.Points(ambientGeo, ambientParticleMat);
+    scene.add(ambientParticles);
+
+    // Burst particle pool released whenever she taps to bloom
+    const burstCount = 75;
+    const burstGeo = new THREE.BufferGeometry();
+    const burstPositions = new Float32Array(burstCount * 3);
+    const burstVelocities = [];
+    let burstLife = 0;
+
+    for (let i = 0; i < burstCount; i++) {
+      burstPositions[i * 3 + 1] = -999; // Hide initially
+      burstVelocities.push(new THREE.Vector3());
+    }
+    burstGeo.setAttribute('position', new THREE.BufferAttribute(burstPositions, 3));
+
+    const burstMat = new THREE.PointsMaterial({
+      map: glowTexture,
+      color: 0xffe4f2,
+      size: 0.22,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const burstParticles = new THREE.Points(burstGeo, burstMat);
+    scene.add(burstParticles);
+
+    function triggerParticleBurst() {
+      burstLife = 1.0;
+      burstMat.opacity = 0.95;
+      const origin = new THREE.Vector3(0, 1.35, 0.45);
+      for (let i = 0; i < burstCount; i++) {
+        burstPositions[i * 3] = origin.x + (Math.random() - 0.5) * 0.35;
+        burstPositions[i * 3 + 1] = origin.y + (Math.random() - 0.5) * 0.35;
+        burstPositions[i * 3 + 2] = origin.z + (Math.random() - 0.5) * 0.35;
+
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI * 0.65;
+        const speed = 0.8 + Math.random() * 1.9;
+        burstVelocities[i].set(
+          Math.sin(phi) * Math.cos(theta) * speed,
+          Math.cos(phi) * speed + 0.6,
+          Math.sin(phi) * Math.sin(theta) * speed
+        );
+      }
+      burstGeo.attributes.position.needsUpdate = true;
+    }
+
+    // =========================================================================
+    // 7. INTERACTIVITY: TAP TO BLOOM, RAYCASTING & UI MODAL CONTROLS
+    // =========================================================================
+    let isBloomed = false; // Starts partially closed so she gets to watch it bloom open!
+    let bloomProgress = 0.18; // Current interpolated state [0 = bud, 1 = full bloom]
+    let targetBloom = 0.18;
+
+    const btnBloom = document.getElementById('btn-bloom');
+    const btnBloomText = document.getElementById('btn-bloom-text');
+    const hintPill = document.getElementById('interaction-hint');
+
+    function toggleBloom(forceOpen = null) {
+      isBloomed = forceOpen !== null ? forceOpen : !isBloomed;
+      targetBloom = isBloomed ? 1.0 : 0.18;
+      btnBloomText.textContent = isBloomed ? 'Tutup' : 'Buka';
+      if (isBloomed) {
+        triggerParticleBurst();
+        hintPill.textContent = '🌸 Tap a floating photo to read its memory • Drag to orbit';
+      }
+    }
+
+    btnBloom.addEventListener('click', () => toggleBloom());
+
+    // Polaroid Lightbox Modal Elements & Helper
+    const photoModal = document.getElementById('photo-modal');
+    const modalPhotoImg = document.getElementById('modal-photo-img');
+    const modalPhotoCaption = document.getElementById('modal-photo-caption');
+    const modalPhotoDate = document.getElementById('modal-photo-date');
+    const btnClosePhoto = document.getElementById('btn-close-photo');
+
+    function openPolaroidModal(polaroidData) {
+      modalPhotoImg.src = polaroidData.imageUrl;
+      modalPhotoCaption.textContent = polaroidData.caption;
+      modalPhotoDate.textContent = polaroidData.date || '';
+      photoModal.classList.remove('modal-hidden');
+    }
+
+    btnClosePhoto.addEventListener('click', () => {
+      photoModal.classList.add('modal-hidden');
+    });
+
+    photoModal.addEventListener('click', (e) => {
+      if (e.target === photoModal) {
+        photoModal.classList.add('modal-hidden');
+      }
+    });
+
+    // Raycasting so tapping directly on a Polaroid opens the photo modal,
+    // and tapping on the 3D flower triggers bloom
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      // Distinguish a quick tap/click from a camera drag gesture
+      const dx = e.clientX - pointerDownPos.x;
+      const dy = e.clientY - pointerDownPos.y;
+      if (Math.hypot(dx, dy) > 8) return;
+
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+
+      // 1. Check if she tapped any floating Polaroid photo card first
+      const photoHits = raycaster.intersectObjects(polaroidGroupRoot.children, true);
+      if (photoHits.length > 0) {
+        const hitObj = photoHits[0].object;
+        const card = hitObj.userData.polaroidParent;
+        if (card && card.userData.isPolaroid) {
+          openPolaroidModal(card.userData);
+          return;
+        }
+      }
+
+      // 2. Otherwise check if she tapped the 3D lily flower
+      const flowerHits = raycaster.intersectObjects(flowerRoot.children, true);
+      if (flowerHits.length > 0) {
+        toggleBloom();
+      }
+    });
+
+    // Love Note Modal Controls
+    const noteModal = document.getElementById('note-modal');
+    const btnNote = document.getElementById('btn-note');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+
+    btnNote.addEventListener('click', () => {
+      noteModal.classList.remove('modal-hidden');
+      // Automatically bloom the flower when she opens the note if it's still closed
+      if (!isBloomed) toggleBloom(true);
+    });
+
+    btnCloseModal.addEventListener('click', () => {
+      noteModal.classList.add('modal-hidden');
+    });
+
+    noteModal.addEventListener('click', (e) => {
+      if (e.target === noteModal) {
+        noteModal.classList.add('modal-hidden');
+      }
+    });
+
+    // Responsive Resize Handling
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+
+    // =========================================================================
+    // 8. MAIN ANIMATION LOOP (SMOOTH BLOOM EASING, WIND SWAY & PARTICLES)
+    // =========================================================================
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.getElapsedTime();
+
+      // Smoothly interpolate bloom progress
+      bloomProgress += (targetBloom - bloomProgress) * Math.min(1, dt * 2.8);
+
+      // Update each petal's opening angle + gentle breathing micro-motion
+      petalPivots.forEach((p, idx) => {
+        const breathe = Math.sin(elapsed * 1.4 + idx * 0.9) * 0.025 * bloomProgress;
+        const currentTilt = THREE.MathUtils.lerp(p.closedTilt, p.openTilt, bloomProgress);
+        p.pivot.rotation.x = currentTilt + p.baseAngleOffset + breathe;
+      });
+
+      // Stamens gently flare outward as the lily opens
+      stamenPivots.forEach((sPivot, idx) => {
+        const sway = Math.sin(elapsed * 1.8 + idx) * 0.02;
+        sPivot.rotation.x = THREE.MathUtils.lerp(0.02, 0.24, bloomProgress) + sway;
+      });
+
+      // Gentle ambient breeze swaying the whole flower stem
+      flowerRoot.rotation.z = Math.sin(elapsed * 0.95) * 0.035;
+      flowerRoot.rotation.x = Math.cos(elapsed * 0.75) * 0.025;
+
+      // Gently float and bob the 4 Polaroid memory cards around the flower
+      polaroidCards.forEach((card) => {
+        const { basePos, baseRot, phase } = card.userData;
+        card.position.y = basePos.y + Math.sin(elapsed * 1.25 + phase) * 0.09;
+        card.position.x = basePos.x + Math.cos(elapsed * 0.85 + phase) * 0.04;
+        card.rotation.z = baseRot.z + Math.sin(elapsed * 1.1 + phase) * 0.035;
+        card.rotation.y = baseRot.y + Math.cos(elapsed * 0.9 + phase) * 0.045;
+      });
+
+      // Drift ambient twilight fireflies upward
+      const ambPos = ambientGeo.attributes.position.array;
+      for (let i = 0; i < ambientCount; i++) {
+        ambPos[i * 3 + 1] += ambientSpeeds[i] * dt;
+        ambPos[i * 3] += Math.sin(elapsed * 0.8 + ambientPhases[i]) * 0.12 * dt;
+        if (ambPos[i * 3 + 1] > 4.0) {
+          ambPos[i * 3 + 1] = -3.8;
+        }
+      }
+      ambientGeo.attributes.position.needsUpdate = true;
+
+      // Update bloom burst particles if active
+      if (burstLife > 0) {
+        burstLife -= dt * 0.65;
+        burstMat.opacity = Math.max(0, burstLife);
+        const bPos = burstGeo.attributes.position.array;
+        for (let i = 0; i < burstCount; i++) {
+          bPos[i * 3] += burstVelocities[i].x * dt;
+          bPos[i * 3 + 1] += burstVelocities[i].y * dt;
+          bPos[i * 3 + 2] += burstVelocities[i].z * dt;
+          // Gentle drag & upward float
+          burstVelocities[i].multiplyScalar(0.96);
+          burstVelocities[i].y += 0.25 * dt;
+        }
+        burstGeo.attributes.position.needsUpdate = true;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // Start animation once window loads
+    window.addEventListener('load', () => {
+      animate();
+    });
+  </script>
+</body>
+</html>
